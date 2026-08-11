@@ -1,36 +1,44 @@
-import os
-import subprocess
 import pexpect
+import re
 
 
 def install_printer_func():
-    answers = [
-        'MFC-L6900\n',
-        'y\n',
-        'y\n',
-        '73\n',
-        '192.168.24.33\n',
-        'n\n'
-    ]
-    os.chdir('brother')
-    print(os.listdir())
-    root_to_file_cmd = "chmod 777 linux-brprinter-installer-2.2.4-1"
-    subprocess.run(root_to_file_cmd, shell=True, check=True)
-    # run_install_cmd = "./linux-brprinter-installer-2.2.4-1"
-    # subprocess.run(run_install_cmd, shell=True, check=True)
-    process = subprocess.Popen(
-        ['./linux-brprinter-installer-2.2.4-1'],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
-    output, err = process.communicate(''.join(answers))
-    print(output)
+            
+    child = pexpect.spawn('bash linux-brprinter-installer-2.2.4-1', encoding='utf-8', echo=False)
+    # child.logfile = sys.stdout
+    child.expect('Input model name ->')
+    child.sendline('MFC-L6900')
 
-    # child = pexpect.spawn('cd brother/')
-    # child = pexpect.spawn('./linux-brprinter-installer-2.2.4-1')
-    # child.expect("Input model name ->.*:")
-    # child.sendline("MFC-L6900")
+    child.expect('OK\\? \\[y/N\\] ->')
+    child.sendline('y')
 
+    child.expect('Do you agree\\? \\[Y/n\\] ->')
+    child.sendline('y')
 
+    child.expect('Will you specify the Device URI\\? \\[Y/n\\] ->')
+    child.sendline('y')
+
+    child.expect('Specify IP address.')
+
+    output = child.before
+    match = re.search(r'(\d+)\s*\(I\):', output)
+    if match:
+        option_number = match.group(1)
+        child.sendline(option_number)
+    else:
+        child.sendline('I')
+
+    child.expect('select the number of destination Device URI. ->')
+    child.sendline(option_number)
+
+    child.expect('enter IP address ->')
+    child.sendline('192.168.24.33')
+
+    child.expect('Test Print\\? \\[y/N\\] ->')
+    child.sendline('n')
+
+    child.expect('Do you agree\\? \\[Y/n\\] ->')
+    child.sendline('y')
+
+    child.expect('Do you agree\\? \\[Y/n\\] ->')
+    child.sendline('y')
